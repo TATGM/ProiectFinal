@@ -281,7 +281,7 @@ namespace ProiectFinal.Sistem
                     Procese.Add(proc);
                 }
 
-                var foundProcessId = GasireProcesHostPort(IDProces.Host, IDProces.Port);   // Hub updates info of ProcessId, so it should be replaced
+                var foundProcessId = GasireProcesHostPort(IDProces.Host, IDProces.Port);
                 if (foundProcessId != null)
                 {
                     IDProces = foundProcessId;
