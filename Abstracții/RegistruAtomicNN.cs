@@ -1,4 +1,4 @@
-﻿using ProiectFinal.Utilități;
+using ProiectFinal.Utilități;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -8,14 +8,14 @@ namespace ProiectFinal.Abstracții
 {
     class Entitate : IComparable<Entitate>
     {
-        public int Timestamp { get; set; }
-        public int WriterRank { get; set; }
-        public ProtoComm.Value Value { get; set; }
+        public int MarcaTemporala { get; set; }
+        public int RangAfisare { get; set; }
+        public ProtoComm.Value Valoare { get; set; }
 
         public static bool operator >(Entitate n1, Entitate n2)
         {
-            if ((n1.Timestamp > n2.Timestamp) ||
-                ((n1.Timestamp == n2.Timestamp) && (n1.WriterRank > n2.WriterRank)))
+            if ((n1.MarcaTemporala > n2.MarcaTemporala) ||
+                ((n1.MarcaTemporala == n2.MarcaTemporala) && (n1.RangAfisare > n2.RangAfisare)))
             {
                 return true;
             }
@@ -25,8 +25,8 @@ namespace ProiectFinal.Abstracții
 
         public static bool operator <(Entitate n1, Entitate n2)
         {
-            if ((n1.Timestamp < n2.Timestamp) ||
-                ((n1.Timestamp == n2.Timestamp) && (n1.WriterRank < n2.WriterRank)))
+            if ((n1.MarcaTemporala < n2.MarcaTemporala) ||
+                ((n1.MarcaTemporala == n2.MarcaTemporala) && (n1.RangAfisare < n2.RangAfisare)))
             {
                 return true;
             }
@@ -56,14 +56,14 @@ namespace ProiectFinal.Abstracții
     {
         public static readonly string Nume = "nnar";
 
-        private Entitate _entitate = new Entitate { Timestamp = 0, WriterRank = 0, Value = new ProtoComm.Value { Defined = false } };
-        private int _acks = 0;
-        private int _readId = 0;
-        private ConcurrentDictionary<string, Entitate> _readList = new ConcurrentDictionary<string, Entitate>();
-        private bool _isReading = false;
+        private Entitate _entitate = new Entitate { MarcaTemporala = 0, RangAfisare = 0, Valoare = new ProtoComm.Value { Defined = false } };
+        private int _recunoasteri = 0;
+        private int _citireId = 0;
+        private ConcurrentDictionary<string, Entitate> _citireLista = new ConcurrentDictionary<string, Entitate>();
+        private bool _citire = false;
 
-        private ProtoComm.Value _writeValue = new ProtoComm.Value { Defined = false };
-        private ProtoComm.Value _readValue = new ProtoComm.Value { Defined = false };
+        private ProtoComm.Value _afisareValoare = new ProtoComm.Value { Defined = false };
+        private ProtoComm.Value _citireValoare = new ProtoComm.Value { Defined = false };
 
 
         public RegistruAtomicNN(string abstractionId, Sistem.Sistem system)
@@ -109,7 +109,7 @@ namespace ProiectFinal.Abstracții
                 if (mesaj.PlDeliver.Message.Type == ProtoComm.Message.Types.Type.NnarInternalValue)
                 {
                     var nnarInternalValueMessage = mesaj.PlDeliver.Message.NnarInternalValue;
-                    if (nnarInternalValueMessage.ReadId == _readId)
+                    if (nnarInternalValueMessage.ReadId == _citireId)
                     {
                         ValoareLocalaRegistruAtomicManipulat(mesaj);
                         return true;
@@ -120,7 +120,7 @@ namespace ProiectFinal.Abstracții
                 if (mesaj.PlDeliver.Message.Type == ProtoComm.Message.Types.Type.NnarInternalAck)
                 {
                     var nnarInternalAckMessage = mesaj.PlDeliver.Message.NnarInternalAck;
-                    if (nnarInternalAckMessage.ReadId == _readId)
+                    if (nnarInternalAckMessage.ReadId == _citireId)
                     {
                         ConfirmareLocalaRegistruAtomicManipulat(mesaj);
                         return true;
@@ -136,13 +136,13 @@ namespace ProiectFinal.Abstracții
 
         private Entitate GetValoareaMaxima()
         {
-            return _readList.Values.Max();
+            return _citireLista.Values.Max();
         }
 
         private void ConfirmareLocalaRegistruAtomicManipulat(ProtoComm.Message mesaj)
         {
-            _acks++;
-            if (_acks > (_sistem.Procese.Count / 2))
+            _recunoasteri++;
+            if (_recunoasteri > (_sistem.Procese.Count / 2))
             {
                 var outputMessage = new ProtoComm.Message
                 {
@@ -152,15 +152,15 @@ namespace ProiectFinal.Abstracții
                     MessageUuid = Guid.NewGuid().ToString()
                 };
 
-                _acks = 0;
-                if (_isReading)
+                _recunoasteri = 0;
+                if (_citire)
                 {
-                    _isReading = false;
+                    _citire = false;
 
                     outputMessage.Type = ProtoComm.Message.Types.Type.NnarReadReturn;
                     outputMessage.NnarReadReturn = new ProtoComm.NnarReadReturn
                     {
-                        Value = _readValue
+                        Value = _citireValoare
                     };
                 }
                 else
@@ -181,29 +181,29 @@ namespace ProiectFinal.Abstracții
 
             var receivedEntitate = new Entitate
             {
-                Timestamp = nnarInternalValueMessage.Timestamp,
-                WriterRank = nnarInternalValueMessage.WriterRank,
-                Value = nnarInternalValueMessage.Value
+                MarcaTemporala = nnarInternalValueMessage.Timestamp,
+                RangAfisare = nnarInternalValueMessage.WriterRank,
+                Valoare = nnarInternalValueMessage.Value
             };
 
-            _readList[plDeliverMessage.Sender.Owner + '-' + plDeliverMessage.Sender.Index] = receivedEntitate;
+            _citireLista[plDeliverMessage.Sender.Owner + '-' + plDeliverMessage.Sender.Index] = receivedEntitate;
 
-            if (_readList.Count > (_sistem.Procese.Count / 2))
+            if (_citireLista.Count > (_sistem.Procese.Count / 2))
             {
                 var maxEntitate = GetValoareaMaxima();
-                _readValue = maxEntitate.Value;
+                _citireValoare = maxEntitate.Valoare;
 
-                _readList.Clear();
+                _citireLista.Clear();
 
                 ProtoComm.NnarInternalWrite nnarInternalWriteMessage;
-                if (_isReading)
+                if (_citire)
                 {
                     nnarInternalWriteMessage = new ProtoComm.NnarInternalWrite
                     {
                         ReadId = nnarInternalValueMessage.ReadId,
-                        Timestamp = maxEntitate.Timestamp,
-                        WriterRank = maxEntitate.WriterRank,
-                        Value = maxEntitate.Value
+                        Timestamp = maxEntitate.MarcaTemporala,
+                        WriterRank = maxEntitate.RangAfisare,
+                        Value = maxEntitate.Valoare
                     };
                 }
                 else
@@ -211,9 +211,9 @@ namespace ProiectFinal.Abstracții
                     nnarInternalWriteMessage = new ProtoComm.NnarInternalWrite
                     {
                         ReadId = nnarInternalValueMessage.ReadId,
-                        Timestamp = maxEntitate.Timestamp + 1,
+                        Timestamp = maxEntitate.MarcaTemporala + 1,
                         WriterRank = _sistem.IDProces.Rank,
-                        Value = _writeValue
+                        Value = _afisareValoare
                     };
                 }
 
@@ -249,9 +249,9 @@ namespace ProiectFinal.Abstracții
 
             var receivedEntity = new Entitate
             {
-                Timestamp = nnarInternalWriteMessage.Timestamp,
-                WriterRank = nnarInternalWriteMessage.WriterRank,
-                Value = nnarInternalWriteMessage.Value
+                MarcaTemporala = nnarInternalWriteMessage.Timestamp,
+                RangAfisare = nnarInternalWriteMessage.WriterRank,
+                Valoare = nnarInternalWriteMessage.Value
             };
 
             if (_entitate > receivedEntity)
@@ -300,9 +300,9 @@ namespace ProiectFinal.Abstracții
                 NnarInternalValue = new ProtoComm.NnarInternalValue
                 {
                     ReadId = nnarInternalReadMessage.ReadId,
-                    Timestamp = _entitate.Timestamp,
-                    WriterRank = _entitate.WriterRank,
-                    Value = _entitate.Value
+                    Timestamp = _entitate.MarcaTemporala,
+                    WriterRank = _entitate.RangAfisare,
+                    Value = _entitate.Valoare
                 },
                 SystemId = _sistem.IDSistem,
                 ToAbstractionId = _IdAbstractie,
@@ -329,17 +329,17 @@ namespace ProiectFinal.Abstracții
 
         private void CitireRegistruAtomicManipulat()
         {
-            _readId++;
-            _acks = 0;
-            _readList.Clear();
-            _isReading = true;
+            _citireId++;
+            _recunoasteri = 0;
+            _citireLista.Clear();
+            _citire = true;
 
             var nnarInternalReadMessage = new ProtoComm.Message
             {
                 Type = ProtoComm.Message.Types.Type.NnarInternalRead,
                 NnarInternalRead = new ProtoComm.NnarInternalRead
                 {
-                    ReadId = _readId
+                    ReadId = _citireId
                 },
                 SystemId = _sistem.IDSistem,
                 ToAbstractionId = _IdAbstractie,
@@ -367,17 +367,17 @@ namespace ProiectFinal.Abstracții
         {
             var nnarWriteMessage = mesaj.NnarWrite;
 
-            _readId++;
-            _writeValue = new ProtoComm.Value { Defined = true, V = nnarWriteMessage.Value.V };
-            _acks = 0;
-            _readList.Clear();
+            _citireId++;
+            _afisareValoare = new ProtoComm.Value { Defined = true, V = nnarWriteMessage.Value.V };
+            _recunoasteri = 0;
+            _citireLista.Clear();
 
             var nnarInternalReadMessage = new ProtoComm.Message
             {
                 Type = ProtoComm.Message.Types.Type.NnarInternalRead,
                 NnarInternalRead = new ProtoComm.NnarInternalRead
                 {
-                    ReadId = _readId
+                    ReadId = _citireId
                 },
                 SystemId = _sistem.IDSistem,
                 ToAbstractionId = _IdAbstractie,
