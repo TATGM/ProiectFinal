@@ -1,57 +1,57 @@
-﻿using ProiectFinal.Abstracții;
+using ProiectFinal.Abstracții;
 
 namespace ProiectFinal.Utilități
 {
     static class UtilitatiIDAbstractie
     {
-        public static string GetIDAbstractieParinte(string originalAbstractionId)
+        public static string GetIDAbstractieParinte(string IDAbstractieOriginala)
         {
-            if ((originalAbstractionId == null) || (originalAbstractionId == ""))
+            if ((IDAbstractieOriginala == null) || (IDAbstractieOriginala == ""))
                 return "";
 
-            int pos = originalAbstractionId.LastIndexOf('.');
-            if (pos < 0)
-                return originalAbstractionId;
+            int pozitie = IDAbstractieOriginala.LastIndexOf('.');
+            if (pozitie < 0)
+                return IDAbstractieOriginala;
 
-            return originalAbstractionId[0..pos];
+            return IDAbstractieOriginala[0..pozitie];
         }
 
-        public static string GetIDAbstractieCopil(string parentAbstractionId, string childAbstractionId)
+        public static string GetIDAbstractieCopil(string IDAbstractieParinte, string IDAbstractieCopil)
         {
-            if ((parentAbstractionId == null) || (parentAbstractionId == ""))
+            if ((IDAbstractieParinte == null) || (IDAbstractieParinte == ""))
                 return "";
 
-            if ((childAbstractionId == null) || (childAbstractionId == ""))
-                return parentAbstractionId;
+            if ((IDAbstractieCopil == null) || (IDAbstractieCopil == ""))
+                return IDAbstractieParinte;
 
-            return parentAbstractionId + '.' + childAbstractionId;
+            return IDAbstractieParinte + '.' + IDAbstractieCopil;
         }
 
-        public static string GetIDAbstractieRegistruAtomicNN(string parentAbstractionId, string nnarId)
+        public static string GetIDAbstractieRegistruAtomicNN(string IDAbstractieParinte, string nnarId)
         {
-            if ((parentAbstractionId == null) || (parentAbstractionId == ""))
+            if ((IDAbstractieParinte == null) || (IDAbstractieParinte == ""))
                 return "";
 
-            return parentAbstractionId + '.' + RegistruAtomicNN.Nume + '[' + nnarId + ']';
+            return IDAbstractieParinte + '.' + RegistruAtomicNN.Nume + '[' + nnarId + ']';
         }
 
-        public static string GetNumeRegistruAtomicNN(string nnarAbstractionId)
+        public static string GetNumeRegistruAtomicNN(string IDAbstractieRegistruAtomicNN)
         {
-            int nnarKeywordIndex = nnarAbstractionId.IndexOf(RegistruAtomicNN.Nume);
-            if (nnarKeywordIndex < 0)
+            int IndiceCuvantCheieRegistruAtomic = IDAbstractieRegistruAtomicNN.IndexOf(RegistruAtomicNN.Nume);
+            if (IndiceCuvantCheieRegistruAtomic < 0)
                 return "";
 
-            var nnarIdSubstring = nnarAbstractionId.Substring(nnarKeywordIndex);
+            var IDSubsirRegistruAtomicNN = IDAbstractieRegistruAtomicNN.Substring(IndiceCuvantCheieRegistruAtomic);
 
-            int openingNnarScopeIndex = RegistruAtomicNN.Nume.Length;
-            if (nnarIdSubstring[openingNnarScopeIndex] != '[')
+            int IndicePornireDomeniuRegistruAtomicNN = RegistruAtomicNN.Nume.Length;
+            if (IDSubsirRegistruAtomicNN[IndicePornireDomeniuRegistruAtomicNN] != '[')
                 return "";
 
-            int closingNnarScopeIndex = nnarIdSubstring.IndexOf(']');
-            if (closingNnarScopeIndex < 0)
+            int IndiceOprireDomeniuRegistruAtomicNN = IDSubsirRegistruAtomicNN.IndexOf(']');
+            if (IndiceOprireDomeniuRegistruAtomicNN < 0)
                 return "";
 
-            return nnarIdSubstring.Substring(openingNnarScopeIndex + 1, closingNnarScopeIndex - openingNnarScopeIndex - 1);
+            return IDSubsirRegistruAtomicNN.Substring(IndicePornireDomeniuRegistruAtomicNN + 1, IndiceOprireDomeniuRegistruAtomicNN - IndicePornireDomeniuRegistruAtomicNN - 1);
         }
     }
 }
