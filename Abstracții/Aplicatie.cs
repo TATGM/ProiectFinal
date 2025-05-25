@@ -1,4 +1,4 @@
-﻿using ProiectFinal.Utilități;
+using ProiectFinal.Utilități;
 using System;
 
 namespace ProiectFinal.Abstracții
@@ -37,6 +37,12 @@ namespace ProiectFinal.Abstracții
                     return true;
                 }
 
+                if (innerMessage.Type == ProtoComm.Message.Types.Type.AppPropose)
+                {
+                    ManipulareAplicatiePropunere(innerMessage);
+                    return true;
+                }
+
                 return false;
             }
 
@@ -58,7 +64,69 @@ namespace ProiectFinal.Abstracții
                 return true;
             }
 
+            if (mesaj.Type == ProtoComm.Message.Types.Type.UcDecide)
+            {
+                ManipulareDecizieUc(mesaj);
+                return true;
+            }
+
             return false;
+        }
+
+        private void ManipulareDecizieUc(ProtoComm.Message mesaj)
+        {
+            var ucDecideMessage = mesaj.UcDecide;
+
+            var plsendMessage = new ProtoComm.PlSend
+            {
+                Destination = _sistem.IDProcesHub,
+                Message = new ProtoComm.Message
+                {
+                    Type = ProtoComm.Message.Types.Type.AppDecide,
+                    AppDecide = new ProtoComm.AppDecide
+                    {
+                        Value = ucDecideMessage.Value
+                    },
+                    SystemId = _sistem.IDSistem,
+                    FromAbstractionId = _IdAbstractie,
+                    MessageUuid = Guid.NewGuid().ToString()
+                }
+            };
+
+            var outputMessage = new ProtoComm.Message
+            {
+                Type = ProtoComm.Message.Types.Type.PlSend,
+                PlSend = plsendMessage,
+                SystemId = _sistem.IDSistem,
+                FromAbstractionId = _IdAbstractie,
+                ToAbstractionId = UtilitatiIDAbstractie.GetIDAbstractieCopil(_IdAbstractie, PerfectLink.NumeAplicatie),
+                MessageUuid = Guid.NewGuid().ToString()
+            };
+
+            _sistem.DeclansareEveniment(outputMessage);
+        }
+
+        private void ManipulareAplicatiePropunere(ProtoComm.Message mesaj)
+        {
+            var appProposeMessage = mesaj.AppPropose;
+
+            string ucAbstractionId = UtilitatiIDAbstractie.GetIDAbstractieConsensusUniform(_IdAbstractie, appProposeMessage.Topic);
+            _sistem.InregistrareAbstractie(new ConsensusUniform(ucAbstractionId, _sistem));
+
+            var ucProposeMessage = new ProtoComm.Message
+            {
+                Type = ProtoComm.Message.Types.Type.UcPropose,
+                UcPropose = new ProtoComm.UcPropose
+                {
+                    Value = appProposeMessage.Value
+                },
+                SystemId = _sistem.IDSistem,
+                FromAbstractionId = _IdAbstractie,
+                ToAbstractionId = ucAbstractionId,
+                MessageUuid = Guid.NewGuid().ToString()
+            };
+
+            _sistem.DeclansareEveniment(ucProposeMessage);
         }
 
         private void ManipulareAplicatieCitire(ProtoComm.Message mesaj)
