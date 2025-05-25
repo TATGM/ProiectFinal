@@ -35,6 +35,22 @@ namespace ProiectFinal.Utilități
             return IDAbstractieParinte + '.' + RegistruAtomicNN.Nume + '[' + nnarId + ']';
         }
 
+        public static string GetIDAbstractieConsensusUniform(string IDAbstractieParinte, string IDConsensusUniform)
+        {
+            if ((IDAbstractieParinte == null) || (IDAbstractieParinte == ""))
+                return "";
+
+            return IDAbstractieParinte + '.' + ConsensusUniform.NumeAplicatie + '[' + IDConsensusUniform + ']';
+        }
+
+        public static string GetIDAbstractieEpoca(string IDAbstractieParinte, int IDEpoca)
+        {
+            if ((IDAbstractieParinte == null) || (IDAbstractieParinte == ""))
+                return "";
+
+            return IDAbstractieParinte + '.' + EpocaConsensus.NumeAplicatie + '[' + IDEpoca.ToString() + ']';
+        }
+
         public static string GetNumeRegistruAtomicNN(string IDAbstractieRegistruAtomicNN)
         {
             int IndiceCuvantCheieRegistruAtomic = IDAbstractieRegistruAtomicNN.IndexOf(RegistruAtomicNN.Nume);
